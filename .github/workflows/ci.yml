@@ -24,7 +24,8 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-          
+
+    name: Build
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
