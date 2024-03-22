@@ -7,11 +7,7 @@ import (
 )
 
 type DbConfig struct {
-	DbName     string `split_words:"true"`
-	DbHost     string `split_words:"true"`
-	DbPort     string `split_words:"true"`
-	DbUser     string `split_words:"true"`
-	DbPassword string `split_words:"true"`
+	DbConString string `envconfig:"DATABASE_URL"`
 }
 
 func ReadDbConfig() (DbConfig, error) {

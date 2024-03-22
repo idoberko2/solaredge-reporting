@@ -4,6 +4,7 @@ import (
 	"github.com/idoberko2/semonitor/general"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	"strings"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -50,7 +51,7 @@ func (e *energyDao) Migrate() error {
 		return err
 	}
 
-	m, err := migrate.NewWithDatabaseInstance("file://db/migrations", e.config.DbName, driver)
+	m, err := migrate.NewWithDatabaseInstance("file://db/migrations", e.getDbName(), driver)
 	if err != nil {
 		return err
 	}
@@ -134,4 +135,8 @@ func (e *energyDao) checkIsInitialized() error {
 
 func (e *energyDao) isInitialized() bool {
 	return e.db != nil
+}
+func (e *energyDao) getDbName() string {
+	parts := strings.Split(e.config.DbConString, "/")
+	return parts[len(parts)-1]
 }
