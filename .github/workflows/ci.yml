@@ -1,0 +1,47 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+    services:
+      database:
+        image: timescale/timescaledb:latest-pg14
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: semonitor
+        options: >-
+          --health-cmd "pg_isready -d tsdb -U username"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+          
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Build
+      run: go build -v ./...
+
+    - name: Create .env file
+      run: |
+        touch .env
+        echo DATABASE_URL=postgres://user:password@localhost:5432/semonitor >> .env
+        cat .env
+
+    - name: Test
+      run: go test -v ./...
