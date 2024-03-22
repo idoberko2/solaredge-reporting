@@ -16,9 +16,9 @@ jobs:
       database:
         image: timescale/timescaledb:latest-pg14
         env:
-          POSTGRES_USER: username
+          POSTGRES_USER: user
           POSTGRES_PASSWORD: password
-          POSTGRES_DB: tsdb
+          POSTGRES_DB: semonitor
         options: >-
           --health-cmd "pg_isready -d tsdb -U username"
           --health-interval 10s
@@ -39,5 +39,11 @@ jobs:
     - name: Build
       run: go build -v ./...
 
+    - name: Create .env file
+      run: |
+        touch .env
+        echo DATABASE_URL=postgres://user:password@localhost:5432/semonitor >> .env
+        cat .env
+
     - name: Test
-      run: SEM_AVOID_DOT_ENV=true SEM_DB_NAME=tsdb SEM_DB_HOST=localhost SEM_DB_PORT=5432 SEM_DB_USER=username SEM_DB_PASSWORD=password go test -v ./...
+      run: go test -v ./...
