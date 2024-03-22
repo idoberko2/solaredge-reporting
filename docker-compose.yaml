@@ -2,13 +2,11 @@ services:
   timescale:
     image: timescale/timescaledb:latest-pg14
     environment:
-      POSTGRES_USER: tsdb
+      POSTGRES_USER: user
       POSTGRES_PASSWORD: password
-      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_DB: semonitor
       TZ: 'UTC'
       PGTZ: 'UTC'
     ports:
       - 5444:5432
-    volumes:
-      - ./.data:/var/lib/postgresql/data
     container_name: sem_tsdb
