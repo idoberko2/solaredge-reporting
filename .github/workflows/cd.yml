@@ -62,5 +62,4 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           dokku-host: 'idoberko2.com'
           app-name: 'semonitor'
-          commit: 'main'
           remote-branch: 'master'
