@@ -4,11 +4,13 @@ import (
 	"context"
 	"github.com/idoberko2/semonitor/db"
 	log "github.com/sirupsen/logrus"
+	"strconv"
 	"time"
 )
 
 type Engine interface {
 	FetchAndPersist(ctx context.Context, from time.Time, to time.Time) error
+	FetchAndPersistLastDays(ctx context.Context, rawDays string) error
 	IsHealthy() bool
 }
 
@@ -50,6 +52,18 @@ func (e *engine) FetchAndPersist(ctx context.Context, from time.Time, to time.Ti
 	}
 
 	return nil
+}
+
+func (e *engine) FetchAndPersistLastDays(ctx context.Context, rawDays string) error {
+	days, err := strconv.Atoi(rawDays)
+	if err != nil {
+		return err
+	}
+
+	to := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.UTC)
+	from := to.Add(-24 * time.Duration(days) * time.Hour)
+
+	return e.FetchAndPersist(ctx, from, to)
 }
 
 func (e *engine) IsHealthy() bool {

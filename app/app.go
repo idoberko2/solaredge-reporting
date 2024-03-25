@@ -8,14 +8,15 @@ import (
 	"github.com/idoberko2/semonitor/seclient"
 	"github.com/idoberko2/semonitor/server"
 	"github.com/imroc/req/v3"
+	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/joho/godotenv"
 	log "github.com/sirupsen/logrus"
+	"github.com/thatisuday/commando"
 )
 
 type App interface {
@@ -26,6 +27,8 @@ func New() App {
 	return &app{}
 }
 
+const ArgDays = "days"
+
 type app struct {
 	engine       engine.Engine
 	srv          *http.Server
@@ -33,6 +36,43 @@ type app struct {
 }
 
 func (a *app) Run(ctx context.Context) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	commando.
+		SetExecutableName("semonitor").
+		SetVersion("v1.0.0").
+		SetDescription("This tool fetches SolarEdge energy statistics and stores them to timescale db")
+
+	commando.
+		Register(nil).
+		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
+			if err := a.init(); err != nil {
+				log.WithError(err).Fatal("error initializing app")
+			}
+
+			if err := a.startServer(ctx); err != nil {
+				log.WithError(err).Fatal("error starting server")
+			}
+		})
+
+	commando.
+		Register("fetch-recent").
+		AddArgument(ArgDays, "how many days to fetch (starting today going backwards)", "").
+		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
+			if err := a.init(); err != nil {
+				log.WithError(err).Fatal("error initializing app")
+			}
+
+			if err := a.engine.FetchAndPersistLastDays(ctx, args[ArgDays].Value); err != nil {
+				log.WithError(err).Fatal("error fetching last days")
+			}
+		})
+
+	commando.Parse(nil)
+}
+
+func (a *app) init() error {
 	appConfig, err := general.ReadAppConfig()
 	if err != nil {
 		log.WithError(err).Fatal("error reading app config")
@@ -45,22 +85,6 @@ func (a *app) Run(ctx context.Context) {
 		}
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	if err := a.init(); err != nil {
-		log.WithError(err).Fatal("error initializing app")
-	}
-
-	if err := a.startServer(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.WithError(err).Fatal("error starting server")
-	}
-
-	// wait for shutdown to complete
-	<-a.shutdownDone
-}
-
-func (a *app) init() error {
 	dbCfg, err := db.ReadDbConfig()
 	if err != nil {
 		return err
@@ -92,7 +116,6 @@ func (a *app) init() error {
 	eng := engine.New(cfg, enSvc, hcDao)
 
 	a.engine = eng
-	a.shutdownDone = make(chan bool, 1)
 
 	return nil
 }
@@ -105,10 +128,19 @@ func (a *app) startServer(ctx context.Context) error {
 
 	srv := server.New(a.engine, cfg)
 	a.srv = srv
+
+	a.shutdownDone = make(chan bool, 1)
 	go a.waitForShutdown(ctx, cfg)
 
 	log.Info("starting server...")
-	return srv.ListenAndServe()
+	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+
+	// wait for shutdown to complete
+	<-a.shutdownDone
+
+	return nil
 }
 
 func (a *app) waitForShutdown(ctx context.Context, cfg server.ServerConfig) {
