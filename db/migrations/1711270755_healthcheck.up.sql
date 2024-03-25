@@ -1,0 +1,3 @@
+CREATE TABLE healthcheck (
+    t       TIMESTAMPTZ NOT NULL PRIMARY KEY
+);
