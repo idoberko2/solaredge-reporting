@@ -4,6 +4,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"strings"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -36,9 +37,13 @@ func (m *migrator) Migrate(cfg DbConfig) error {
 		return err
 	}
 
-	if err := mig.Up(); !errors.Is(err, migrate.ErrNoChange) {
+	log.Info("running db migration")
+	migErr := mig.Up()
+	if err != nil && !errors.Is(migErr, migrate.ErrNoChange) {
 		return err
 	}
+
+	log.WithField("changes", !errors.Is(migErr, migrate.ErrNoChange)).Info("done migrating")
 
 	return nil
 }

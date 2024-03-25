@@ -65,6 +65,11 @@ func (a *app) init() error {
 	if err != nil {
 		return err
 	}
+	migrator := db.NewMigrator()
+	if err := migrator.Migrate(dbCfg); err != nil {
+		return err
+	}
+
 	eDao := db.NewEnergyDao(dbCfg)
 	if err := eDao.Init(); err != nil {
 		return err
