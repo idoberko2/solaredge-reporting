@@ -11,9 +11,9 @@ test:
 test-integration:
 	go test ./... -tags=integration
 
-deploy:
-	build
+deploy: build
 	scp -i ~/.ssh/personal_rsa bin/semonitor-linux idoberko2@raspberrypi.local:~/
+	scp -i ~/.ssh/personal_rsa db/migrations/* idoberko2@raspberrypi.local:~/db/migrations
 
 run: build
 	./${BINARY_DIR}/${BINARY_NAME}
