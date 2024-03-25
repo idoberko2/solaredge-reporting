@@ -4,11 +4,8 @@ import (
 	"github.com/idoberko2/semonitor/general"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
-	"strings"
 	"time"
 
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
@@ -16,7 +13,6 @@ var ErrNotInitialized = errors.New("DB not initialized")
 
 type EnergyDao interface {
 	Init() error
-	Migrate() error
 	WriteEnergy(energy []general.Energy) error
 	UpdateEnergy(energy general.Energy) error
 	ReadEnergy(from time.Time, to time.Time) ([]general.Energy, error)
@@ -37,28 +33,6 @@ func (e *energyDao) Init() error {
 		return err
 	}
 	e.db = db
-
-	return nil
-}
-
-func (e *energyDao) Migrate() error {
-	if err := e.checkIsInitialized(); err != nil {
-		return err
-	}
-
-	driver, err := postgres.WithInstance(e.db.DB, &postgres.Config{})
-	if err != nil {
-		return err
-	}
-
-	m, err := migrate.NewWithDatabaseInstance("file://db/migrations", e.getDbName(), driver)
-	if err != nil {
-		return err
-	}
-
-	if err := m.Up(); !errors.Is(err, migrate.ErrNoChange) {
-		return err
-	}
 
 	return nil
 }
@@ -135,8 +109,4 @@ func (e *energyDao) checkIsInitialized() error {
 
 func (e *energyDao) isInitialized() bool {
 	return e.db != nil
-}
-func (e *energyDao) getDbName() string {
-	parts := strings.Split(e.config.DbConString, "/")
-	return parts[len(parts)-1]
 }

@@ -31,9 +31,11 @@ func (suite *IntegrationTestSuite) SetupSuite() {
 	suite.Require().NoError(general.LoadDotEnv())
 	dbCfg, err := db.ReadDbConfig()
 	suite.Require().NoError(err)
+	mig := db.NewMigrator()
+	suite.Require().NoError(mig.Migrate(dbCfg))
+
 	dao := db.NewEnergyDao(dbCfg)
 	suite.Require().NoError(dao.Init())
-	suite.Require().NoError(dao.Migrate())
 	suite.dao = dao
 	suite.c = db.NewCleaner(dbCfg)
 
