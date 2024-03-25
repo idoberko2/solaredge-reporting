@@ -16,18 +16,16 @@ import (
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/thatisuday/commando"
 )
 
 type App interface {
-	Run(ctx context.Context)
+	RunServer(ctx context.Context) error
+	RunLastDays(ctx context.Context, rawDays string) error
 }
 
 func New() App {
 	return &app{}
 }
-
-const ArgDays = "days"
 
 type app struct {
 	engine       engine.Engine
@@ -35,41 +33,28 @@ type app struct {
 	shutdownDone chan bool
 }
 
-func (a *app) Run(ctx context.Context) {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+func (a *app) RunServer(ctx context.Context) error {
+	if err := a.init(); err != nil {
+		return err
+	}
 
-	commando.
-		SetExecutableName("semonitor").
-		SetVersion("v1.0.0").
-		SetDescription("This tool fetches SolarEdge energy statistics and stores them to timescale db")
+	if err := a.startServer(ctx); err != nil {
+		return err
+	}
 
-	commando.
-		Register(nil).
-		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
-			if err := a.init(); err != nil {
-				log.WithError(err).Fatal("error initializing app")
-			}
+	return nil
+}
 
-			if err := a.startServer(ctx); err != nil {
-				log.WithError(err).Fatal("error starting server")
-			}
-		})
+func (a *app) RunLastDays(ctx context.Context, rawDays string) error {
+	if err := a.init(); err != nil {
+		return err
+	}
 
-	commando.
-		Register("fetch-recent").
-		AddArgument(ArgDays, "how many days to fetch (starting today going backwards)", "").
-		SetAction(func(args map[string]commando.ArgValue, flags map[string]commando.FlagValue) {
-			if err := a.init(); err != nil {
-				log.WithError(err).Fatal("error initializing app")
-			}
+	if err := a.engine.FetchAndPersistLastDays(ctx, rawDays); err != nil {
+		return err
+	}
 
-			if err := a.engine.FetchAndPersistLastDays(ctx, args[ArgDays].Value); err != nil {
-				log.WithError(err).Fatal("error fetching last days")
-			}
-		})
-
-	commando.Parse(nil)
+	return nil
 }
 
 func (a *app) init() error {

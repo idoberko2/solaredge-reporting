@@ -40,7 +40,7 @@ func (suite *IntegrationTestSuite) SetupTest() {
 	a := New()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	suite.appCancel = cancel
-	go a.Run(ctx)
+	go a.RunServer(ctx)
 	suite.waitUntilServerReady()
 }
 
