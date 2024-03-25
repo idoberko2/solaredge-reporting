@@ -41,7 +41,7 @@ func GetFetchPersist(e engine.Engine) func(w http.ResponseWriter, r *http.Reques
 			return
 		}
 
-		toRaw := r.URL.Query().Get("from")
+		toRaw := r.URL.Query().Get("to")
 		if toRaw == "" {
 			jsonResponse, err := json.Marshal(FetchPersistResponse{
 				Status:  StatusError,
