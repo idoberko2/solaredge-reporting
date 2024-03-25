@@ -38,16 +38,19 @@ func (suite *MockedClientTestSuite) SetupSuite() {
 	mig := db.NewMigrator()
 	suite.Require().NoError(mig.Migrate(dbCfg))
 
-	dao := db.NewEnergyDao(dbCfg)
-	suite.Require().NoError(dao.Init())
-	suite.dao = dao
+	eDao := db.NewEnergyDao(dbCfg)
+	suite.Require().NoError(eDao.Init())
+	suite.dao = eDao
 	suite.c = db.NewCleaner(dbCfg)
+
+	hcDao := db.NewHealthCheckDao(dbCfg)
+	suite.Require().NoError(hcDao.Init())
 
 	engineCfg, err := ReadConfig()
 	suite.Require().NoError(err)
 
-	suite.svc = NewEnergyService(dao, suite.initMockSeClient())
-	suite.engine = New(engineCfg, suite.svc)
+	suite.svc = NewEnergyService(eDao, suite.initMockSeClient())
+	suite.engine = New(engineCfg, suite.svc, hcDao)
 
 	suite.apiCalls = []apiParamsCalls{}
 }
