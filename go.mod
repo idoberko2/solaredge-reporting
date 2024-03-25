@@ -38,6 +38,8 @@ require (
 	github.com/quic-go/quic-go v0.41.0 // indirect
 	github.com/refraction-networking/utls v1.6.3 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
+	github.com/thatisuday/clapper v1.0.10 // indirect
+	github.com/thatisuday/commando v1.0.4 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/mock v0.4.0 // indirect
 	golang.org/x/crypto v0.20.0 // indirect

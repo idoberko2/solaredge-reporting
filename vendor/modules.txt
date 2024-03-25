@@ -212,6 +212,12 @@ github.com/stretchr/testify/assert
 github.com/stretchr/testify/mock
 github.com/stretchr/testify/require
 github.com/stretchr/testify/suite
+# github.com/thatisuday/clapper v1.0.10
+## explicit; go 1.13
+github.com/thatisuday/clapper
+# github.com/thatisuday/commando v1.0.4
+## explicit; go 1.13
+github.com/thatisuday/commando
 # go.uber.org/atomic v1.7.0
 ## explicit; go 1.13
 go.uber.org/atomic
@@ -257,7 +263,6 @@ golang.org/x/net/ipv6
 golang.org/x/net/publicsuffix
 # golang.org/x/sync v0.6.0
 ## explicit; go 1.18
-golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
 # golang.org/x/sys v0.17.0
 ## explicit; go 1.18
