@@ -2,25 +2,29 @@ package engine
 
 import (
 	"context"
+	"github.com/idoberko2/semonitor/db"
 	log "github.com/sirupsen/logrus"
 	"time"
 )
 
 type Engine interface {
 	FetchAndPersist(ctx context.Context, from time.Time, to time.Time) error
+	IsHealthy() bool
 }
 
-func New(cfg Config, energySvc EnergyService) Engine {
+func New(cfg Config, energySvc EnergyService, hcDao db.HealthCheckDao) Engine {
 	return &engine{
-		cfg:       cfg,
-		energySvc: energySvc,
+		cfg:         cfg,
+		energySvc:   energySvc,
+		healthcheck: hcDao,
 	}
 }
 
 type engine struct {
-	cfg       Config
-	energySvc EnergyService
-	ready     bool
+	cfg         Config
+	energySvc   EnergyService
+	healthcheck db.HealthCheckDao
+	ready       bool
 }
 
 func (e *engine) FetchAndPersist(ctx context.Context, from time.Time, to time.Time) error {
@@ -46,4 +50,8 @@ func (e *engine) FetchAndPersist(ctx context.Context, from time.Time, to time.Ti
 	}
 
 	return nil
+}
+
+func (e *engine) IsHealthy() bool {
+	return e.healthcheck.IsHealthy()
 }

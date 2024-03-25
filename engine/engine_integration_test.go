@@ -31,22 +31,27 @@ func (suite *IntegrationTestSuite) SetupSuite() {
 	suite.Require().NoError(general.LoadDotEnv())
 	dbCfg, err := db.ReadDbConfig()
 	suite.Require().NoError(err)
-	dao := db.NewEnergyDao(dbCfg)
-	suite.Require().NoError(dao.Init())
-	suite.Require().NoError(dao.Migrate())
-	suite.dao = dao
+	mig := db.NewMigrator()
+	suite.Require().NoError(mig.Migrate(dbCfg))
+
+	eDao := db.NewEnergyDao(dbCfg)
+	suite.Require().NoError(eDao.Init())
+	suite.dao = eDao
 	suite.c = db.NewCleaner(dbCfg)
 
 	engineCfg, err := ReadConfig()
 	suite.Require().NoError(err)
 
+	hcDao := db.NewHealthCheckDao(dbCfg)
+	suite.Require().NoError(hcDao.Init())
+
 	client := req.C()
 	suite.svc = NewEnergyService(
-		dao,
+		eDao,
 		seclient.NewSEClient(client, engineCfg.SolarEdgeApiKey, engineCfg.SolarEdgeSiteId),
 	)
 
-	suite.engine = New(engineCfg, suite.svc)
+	suite.engine = New(engineCfg, suite.svc, hcDao)
 }
 
 func (suite *IntegrationTestSuite) SetupTest() {

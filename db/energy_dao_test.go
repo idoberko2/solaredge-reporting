@@ -22,9 +22,12 @@ func (suite *EnergyDaoSuite) SetupSuite() {
 	suite.Require().NoError(general.LoadDotEnv())
 	cfg, err := ReadDbConfig()
 	suite.Require().NoError(err)
+	mig := NewMigrator()
+	suite.Require().NoError(mig.Migrate(cfg))
+
 	dao := NewEnergyDao(cfg)
 	suite.Require().NoError(dao.Init())
-	suite.Require().NoError(dao.Migrate())
+
 	suite.dao = dao
 	suite.c = NewCleaner(cfg)
 }

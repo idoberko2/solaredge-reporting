@@ -13,6 +13,7 @@ func New(e engine.Engine, cfg ServerConfig) *http.Server {
 
 	apir := r.PathPrefix("/api").Subrouter()
 	apir.HandleFunc("/fetch_persist", GetFetchPersist(e)).Queries("from", "{from}", "to", "{to}").Methods(http.MethodGet)
+	apir.HandleFunc("/is_healthy", IsHealthy(e)).Methods(http.MethodGet)
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),

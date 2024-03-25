@@ -65,8 +65,17 @@ func (a *app) init() error {
 	if err != nil {
 		return err
 	}
-	dao := db.NewEnergyDao(dbCfg)
-	if err := dao.Init(); err != nil {
+	migrator := db.NewMigrator()
+	if err := migrator.Migrate(dbCfg); err != nil {
+		return err
+	}
+
+	eDao := db.NewEnergyDao(dbCfg)
+	if err := eDao.Init(); err != nil {
+		return err
+	}
+	hcDao := db.NewHealthCheckDao(dbCfg)
+	if err := hcDao.Init(); err != nil {
 		return err
 	}
 
@@ -76,11 +85,11 @@ func (a *app) init() error {
 	}
 
 	enSvc := engine.NewEnergyService(
-		dao,
+		eDao,
 		seclient.NewSEClient(req.C(), cfg.SolarEdgeApiKey, cfg.SolarEdgeSiteId),
 	)
 
-	eng := engine.New(cfg, enSvc)
+	eng := engine.New(cfg, enSvc, hcDao)
 
 	a.engine = eng
 	a.shutdownDone = make(chan bool, 1)

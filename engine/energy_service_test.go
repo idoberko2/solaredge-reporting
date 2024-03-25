@@ -31,9 +31,11 @@ func (suite *EnergyServiceSuite) SetupSuite() {
 	suite.Require().NoError(general.LoadDotEnv())
 	cfg, err := db.ReadDbConfig()
 	suite.Require().NoError(err)
+	mig := db.NewMigrator()
+	suite.Require().NoError(mig.Migrate(cfg))
+
 	dao := db.NewEnergyDao(cfg)
 	suite.Require().NoError(dao.Init())
-	suite.Require().NoError(dao.Migrate())
 	suite.dao = dao
 	suite.c = db.NewCleaner(cfg)
 	suite.svc = NewEnergyService(dao, suite.initMockSeClient())
