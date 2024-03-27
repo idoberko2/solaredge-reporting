@@ -63,7 +63,7 @@ func (suite *IntegrationTestSuite) TestFetchAndPersist() {
 		suite.time("2024-03-14T00:00:00Z"))
 	suite.Require().NoError(err)
 
-	energies, err := suite.dao.ReadEnergy(suite.time("2024-03-01T11:30:00Z"), suite.time("2024-03-01T11:31:00Z"))
+	energies, err := suite.dao.ReadEnergy(suite.time("2024-03-01T09:30:00Z"), suite.time("2024-03-01T09:31:00Z"))
 	suite.Require().NoError(err)
 	suite.Assert().Equal(1, len(energies))
 	suite.Assert().Equal(3559, energies[0].Value)

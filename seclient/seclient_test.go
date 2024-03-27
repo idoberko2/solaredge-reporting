@@ -39,7 +39,10 @@ func TestClient(t *testing.T) {
 	assert.Len(t, eng, 24*4)
 
 	someValue := eng[47]
-	expectedDt, err := time.Parse(time.RFC3339, "2024-03-01T11:45:00Z")
+	expectedDt, err := time.Parse(time.RFC3339, "2024-03-01T09:45:00Z")
+	loc, err := time.LoadLocation("Asia/Jerusalem")
+	require.NoError(t, err)
+	expectedDt = expectedDt.In(loc)
 	require.NoError(t, err)
 
 	assert.Equal(t, 3513, someValue.Value)

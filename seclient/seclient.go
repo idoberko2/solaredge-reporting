@@ -57,9 +57,14 @@ func parseEnergyResponse(energyRes EnergyResponseContainer) ([]general.Energy, e
 }
 
 func parseEnergyResponseValue(entry EnergyResponseValue) (general.Energy, error) {
-	dt, err := time.Parse("2006-01-02 15:04:05", entry.Date)
+	dtNoTz, err := time.Parse("2006-01-02 15:04:05", entry.Date)
 	if err != nil {
 		return general.Energy{}, errors.Wrap(err, "failed to parse energy datetime")
+	}
+
+	dt, err := adjustTimezone(dtNoTz)
+	if err != nil {
+		return general.Energy{}, errors.Wrap(err, "failed to load timezone info")
 	}
 
 	return general.Energy{
@@ -70,6 +75,25 @@ func parseEnergyResponseValue(entry EnergyResponseValue) (general.Energy, error)
 
 func formatDateForRequest(dt time.Time) string {
 	return dt.Format("2006-01-02")
+}
+
+// SolarEdge returns local time with no TZ info so this function sets the TZ without changing the timestamp
+func adjustTimezone(dt time.Time) (time.Time, error) {
+	loc, err := time.LoadLocation("Asia/Jerusalem")
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return time.Date(
+		dt.Year(),
+		dt.Month(),
+		dt.Day(),
+		dt.Hour(),
+		dt.Minute(),
+		dt.Second(),
+		0,
+		loc,
+	), nil
 }
 
 type EnergyResponse struct {

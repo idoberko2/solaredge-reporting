@@ -53,7 +53,10 @@ func (suite *EnergyServiceSuite) TestRequestEnergies() {
 	suite.Assert().Len(eng, 24)
 
 	someValue := eng[22]
-	expectedDt, err := time.Parse(time.RFC3339, "2024-03-01T11:45:00Z")
+	expectedDt, err := time.Parse(time.RFC3339, "2024-03-01T09:45:00Z")
+	loc, err := time.LoadLocation("Asia/Jerusalem")
+	suite.Require().NoError(err)
+	expectedDt = expectedDt.In(loc)
 	suite.Require().NoError(err)
 
 	suite.Assert().Equal(3513, someValue.Value)
