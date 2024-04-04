@@ -51,7 +51,7 @@ func (suite *IntegrationTestSuite) SetupSuite() {
 		seclient.NewSEClient(client, engineCfg.SolarEdgeApiKey, engineCfg.SolarEdgeSiteId),
 	)
 
-	suite.engine = New(engineCfg, suite.svc, hcDao)
+	suite.engine = New(engineCfg, suite.svc)
 }
 
 func (suite *IntegrationTestSuite) SetupTest() {

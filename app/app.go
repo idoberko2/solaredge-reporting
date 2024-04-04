@@ -29,6 +29,7 @@ func New() App {
 
 type app struct {
 	engine       engine.Engine
+	hcDao        db.HealthCheckDao
 	srv          *http.Server
 	shutdownDone chan bool
 }
@@ -83,8 +84,8 @@ func (a *app) init() error {
 	if err := eDao.Init(); err != nil {
 		return err
 	}
-	hcDao := db.NewHealthCheckDao(dbCfg)
-	if err := hcDao.Init(); err != nil {
+	a.hcDao = db.NewHealthCheckDao(dbCfg)
+	if err := a.hcDao.Init(); err != nil {
 		return err
 	}
 
@@ -98,7 +99,7 @@ func (a *app) init() error {
 		seclient.NewSEClient(req.C(), cfg.SolarEdgeApiKey, cfg.SolarEdgeSiteId),
 	)
 
-	eng := engine.New(cfg, enSvc, hcDao)
+	eng := engine.New(cfg, enSvc)
 
 	a.engine = eng
 
@@ -111,7 +112,7 @@ func (a *app) startServer(ctx context.Context) error {
 		return errCfg
 	}
 
-	srv := server.New(a.engine, cfg)
+	srv := server.New(a.engine, a.hcDao, cfg)
 	a.srv = srv
 
 	a.shutdownDone = make(chan bool, 1)

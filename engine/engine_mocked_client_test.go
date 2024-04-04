@@ -51,7 +51,7 @@ func (suite *MockedClientTestSuite) SetupTest() {
 }
 
 func (suite *MockedClientTestSuite) TestFetchAndPersist_range() {
-	engine := New(suite.engineCfg, NewEnergyService(suite.dao, suite.initMockSeSeparateDaysClient()), nil)
+	engine := New(suite.engineCfg, NewEnergyService(suite.dao, suite.initMockSeSeparateDaysClient()))
 	err := engine.FetchAndPersist(
 		context.Background(),
 		time.Date(2024, 2, 29, 0, 0, 0, 0, time.UTC),
@@ -75,7 +75,7 @@ func (suite *MockedClientTestSuite) TestFetchAndPersist_range() {
 }
 
 func (suite *MockedClientTestSuite) TestFetchAndPersist_zeros() {
-	engine := New(suite.engineCfg, NewEnergyService(suite.dao, suite.initMockSeSeparateDaysClient()), nil)
+	engine := New(suite.engineCfg, NewEnergyService(suite.dao, suite.initMockSeSeparateDaysClient()))
 	err := engine.FetchAndPersist(
 		context.Background(),
 		time.Date(2024, 3, 01, 0, 0, 0, 0, time.UTC),
@@ -89,7 +89,7 @@ func (suite *MockedClientTestSuite) TestFetchAndPersist_zeros() {
 }
 
 func (suite *MockedClientTestSuite) TestFetchAndPersist_update() {
-	engine := New(suite.engineCfg, NewEnergyService(suite.dao, suite.initMockSeSameDayUpdateClient()), nil)
+	engine := New(suite.engineCfg, NewEnergyService(suite.dao, suite.initMockSeSameDayUpdateClient()))
 	err := engine.FetchAndPersist(
 		context.Background(),
 		time.Date(2024, 3, 01, 0, 0, 0, 0, time.UTC),

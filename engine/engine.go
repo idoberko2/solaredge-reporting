@@ -2,7 +2,6 @@ package engine
 
 import (
 	"context"
-	"github.com/idoberko2/semonitor/db"
 	log "github.com/sirupsen/logrus"
 	"strconv"
 	"time"
@@ -11,22 +10,19 @@ import (
 type Engine interface {
 	FetchAndPersist(ctx context.Context, from time.Time, to time.Time) error
 	FetchAndPersistLastDays(ctx context.Context, rawDays string) error
-	IsHealthy() bool
 }
 
-func New(cfg Config, energySvc EnergyService, hcDao db.HealthCheckDao) Engine {
+func New(cfg Config, energySvc EnergyService) Engine {
 	return &engine{
-		cfg:         cfg,
-		energySvc:   energySvc,
-		healthcheck: hcDao,
+		cfg:       cfg,
+		energySvc: energySvc,
 	}
 }
 
 type engine struct {
-	cfg         Config
-	energySvc   EnergyService
-	healthcheck db.HealthCheckDao
-	ready       bool
+	cfg       Config
+	energySvc EnergyService
+	ready     bool
 }
 
 func (e *engine) FetchAndPersist(ctx context.Context, from time.Time, to time.Time) error {
@@ -64,8 +60,4 @@ func (e *engine) FetchAndPersistLastDays(ctx context.Context, rawDays string) er
 	from := to.Add(-24 * time.Duration(days) * time.Hour)
 
 	return e.FetchAndPersist(ctx, from, to)
-}
-
-func (e *engine) IsHealthy() bool {
-	return e.healthcheck.IsHealthy()
 }
