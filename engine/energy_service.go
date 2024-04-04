@@ -51,14 +51,14 @@ func (e *energyService) WriteEnergy(energies []general.Energy) error {
 	persistedValueByTime := toMapByTimestamp(persisted)
 
 	for _, energy := range energies {
-		persistedEnergy, ok := persistedValueByTime[energy.DateTime]
+		persistedEnergy, ok := persistedValueByTime[energy.DateTime.Unix()]
 		if !ok {
 			log.
 				WithField("datetime", energy.DateTime).
 				WithField("value", energy.Value).
 				Debug("adding entry to write")
 			toWrite = append(toWrite, energy)
-		} else if energy.DateTime == lastPersisted.DateTime && persistedEnergy != energy.Value {
+		} else if energy.DateTime.Equal(lastPersisted.DateTime) && persistedEnergy != energy.Value {
 			// only last entry might be updated
 			log.
 				WithField("datetime", energy.DateTime).
@@ -117,10 +117,10 @@ func filterNonZeroEnergies(allEnergies []general.Energy) []general.Energy {
 	return energies
 }
 
-func toMapByTimestamp(energies []general.Energy) map[time.Time]int {
-	res := map[time.Time]int{}
+func toMapByTimestamp(energies []general.Energy) map[int64]int {
+	res := map[int64]int{}
 	for _, energy := range energies {
-		res[energy.DateTime] = energy.Value
+		res[energy.DateTime.Unix()] = energy.Value
 	}
 
 	return res

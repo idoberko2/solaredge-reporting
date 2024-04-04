@@ -46,14 +46,14 @@ func (suite *EnergyServiceSuite) SetupTest() {
 }
 
 func (suite *EnergyServiceSuite) TestRequestEnergies() {
-	tf := suite.time("2024-03-01T00:00:00Z")
+	tf := suite.time("2024-03-01T10:00:00")
 	eng, err := suite.svc.RequestEnergies(tf, tf)
 	suite.Require().NoError(err)
 
 	suite.Assert().Len(eng, 24)
 
 	someValue := eng[22]
-	expectedDt, err := time.Parse(time.RFC3339, "2024-03-01T09:45:00Z")
+	expectedDt, err := time.Parse(time.RFC3339, "2024-03-01T11:45:00+02:00")
 	loc, err := time.LoadLocation("Asia/Jerusalem")
 	suite.Require().NoError(err)
 	expectedDt = expectedDt.In(loc)
@@ -69,16 +69,16 @@ func (suite *EnergyServiceSuite) TestEmptyWrites() {
 
 func (suite *EnergyServiceSuite) TestSimpleWrites() {
 	expected := []general.Energy{{
-		DateTime: suite.time("2024-03-01T12:00:00Z"),
+		DateTime: suite.time("2024-03-01T12:00:00"),
 		Value:    1000,
 	}, {
-		DateTime: suite.time("2024-03-01T12:15:00Z"),
+		DateTime: suite.time("2024-03-01T12:15:00"),
 		Value:    1100,
 	}}
 
 	suite.Require().NoError(suite.svc.WriteEnergy(expected))
 
-	actual, err := suite.dao.ReadEnergy(suite.time("2024-03-01T12:00:00Z"), suite.time("2024-03-01T13:00:00Z"))
+	actual, err := suite.dao.ReadEnergy(suite.time("2024-03-01T12:00:00"), suite.time("2024-03-01T13:00:00"))
 	suite.Require().NoError(err)
 
 	suite.Assert().Equal(expected, actual)
@@ -86,26 +86,26 @@ func (suite *EnergyServiceSuite) TestSimpleWrites() {
 
 func (suite *EnergyServiceSuite) TestWritesUpdates() {
 	part1 := []general.Energy{{
-		DateTime: suite.time("2024-03-01T12:00:00Z"),
+		DateTime: suite.time("2024-03-01T10:00:00"),
 		Value:    1000,
 	}, {
-		DateTime: suite.time("2024-03-01T12:15:00Z"),
+		DateTime: suite.time("2024-03-01T10:15:00"),
 		Value:    1100,
 	}}
 
 	suite.Require().NoError(suite.svc.WriteEnergy(part1))
 
 	part2 := []general.Energy{{
-		DateTime: suite.time("2024-03-01T12:15:00Z"),
+		DateTime: suite.time("2024-03-01T10:15:00"),
 		Value:    1120,
 	}, {
-		DateTime: suite.time("2024-03-01T12:30:00Z"),
+		DateTime: suite.time("2024-03-01T10:30:00"),
 		Value:    1200,
 	}}
 
 	suite.Require().NoError(suite.svc.WriteEnergy(part2))
 
-	actual, err := suite.dao.ReadEnergy(suite.time("2024-03-01T12:00:00Z"), suite.time("2024-03-01T13:00:00Z"))
+	actual, err := suite.dao.ReadEnergy(suite.time("2024-03-01T10:00:00"), suite.time("2024-03-01T11:00:00"))
 	suite.Require().NoError(err)
 
 	suite.Assert().Equal([]general.Energy{part1[0], part2[0], part2[1]}, actual)
@@ -113,36 +113,39 @@ func (suite *EnergyServiceSuite) TestWritesUpdates() {
 
 func (suite *EnergyServiceSuite) TestWriteMiddleUpdateNoChange() {
 	part1 := []general.Energy{{
-		DateTime: suite.time("2024-03-01T12:00:00Z"),
+		DateTime: suite.time("2024-03-01T12:00:00"),
 		Value:    1000,
 	}, {
-		DateTime: suite.time("2024-03-01T12:15:00Z"),
+		DateTime: suite.time("2024-03-01T12:15:00"),
 		Value:    1100,
 	}}
 
 	suite.Require().NoError(suite.svc.WriteEnergy(part1))
 
 	part2 := []general.Energy{{
-		DateTime: suite.time("2024-03-01T12:00:00Z"),
+		DateTime: suite.time("2024-03-01T12:00:00"),
 		Value:    1120,
 	}, {
-		DateTime: suite.time("2024-03-01T12:15:00Z"),
+		DateTime: suite.time("2024-03-01T12:15:00"),
 		Value:    1200,
 	}}
 
 	suite.Require().NoError(suite.svc.WriteEnergy(part2))
 
-	actual, err := suite.dao.ReadEnergy(suite.time("2024-03-01T12:00:00Z"), suite.time("2024-03-01T13:00:00Z"))
+	actual, err := suite.dao.ReadEnergy(suite.time("2024-03-01T12:00:00"), suite.time("2024-03-01T13:00:00"))
 	suite.Require().NoError(err)
 
 	suite.Assert().Equal([]general.Energy{part1[0], part2[1]}, actual)
 }
 
 func (suite *EnergyServiceSuite) time(s string) time.Time {
-	dt, err := time.Parse(time.RFC3339, s)
+	dt, err := time.Parse(time.RFC3339, s+"+02:00")
 	suite.Require().NoError(err)
 
-	return dt
+	loc, err := time.LoadLocation("Asia/Jerusalem")
+	suite.Require().NoError(err)
+
+	return dt.In(loc)
 }
 
 func (suite *EnergyServiceSuite) initMockSeClient() seclient.SEClient {
