@@ -18,12 +18,10 @@ import (
 
 type MockedClientTestSuite struct {
 	suite.Suite
-	srvPort  int
-	dao      db.EnergyDao
-	c        db.Cleaner
-	svc      EnergyService
-	engine   Engine
-	apiCalls []apiParamsCalls
+	srvPort   int
+	dao       db.EnergyDao
+	c         db.Cleaner
+	engineCfg Config
 }
 
 func TestEngineMockedClientSuite(t *testing.T) {
@@ -43,16 +41,9 @@ func (suite *MockedClientTestSuite) SetupSuite() {
 	suite.dao = eDao
 	suite.c = db.NewCleaner(dbCfg)
 
-	hcDao := db.NewHealthCheckDao(dbCfg)
-	suite.Require().NoError(hcDao.Init())
-
 	engineCfg, err := ReadConfig()
 	suite.Require().NoError(err)
-
-	suite.svc = NewEnergyService(eDao, suite.initMockSeClient())
-	suite.engine = New(engineCfg, suite.svc, hcDao)
-
-	suite.apiCalls = []apiParamsCalls{}
+	suite.engineCfg = engineCfg
 }
 
 func (suite *MockedClientTestSuite) SetupTest() {
@@ -60,8 +51,8 @@ func (suite *MockedClientTestSuite) SetupTest() {
 }
 
 func (suite *MockedClientTestSuite) TestFetchAndPersist_range() {
-
-	err := suite.engine.FetchAndPersist(
+	engine := New(suite.engineCfg, NewEnergyService(suite.dao, suite.initMockSeSeparateDaysClient()), nil)
+	err := engine.FetchAndPersist(
 		context.Background(),
 		time.Date(2024, 2, 29, 0, 0, 0, 0, time.UTC),
 		time.Date(2024, 3, 01, 0, 0, 0, 0, time.UTC),
@@ -84,7 +75,8 @@ func (suite *MockedClientTestSuite) TestFetchAndPersist_range() {
 }
 
 func (suite *MockedClientTestSuite) TestFetchAndPersist_zeros() {
-	err := suite.engine.FetchAndPersist(
+	engine := New(suite.engineCfg, NewEnergyService(suite.dao, suite.initMockSeSeparateDaysClient()), nil)
+	err := engine.FetchAndPersist(
 		context.Background(),
 		time.Date(2024, 3, 01, 0, 0, 0, 0, time.UTC),
 		time.Date(2024, 3, 01, 0, 0, 0, 0, time.UTC),
@@ -94,6 +86,32 @@ func (suite *MockedClientTestSuite) TestFetchAndPersist_zeros() {
 	energies, err := suite.dao.ReadEnergy(suite.time("2024-03-01T23:00:00"), suite.time("2024-03-01T23:30:00"))
 	suite.Require().NoError(err)
 	suite.Assert().Equal(0, len(energies), "zeros should not be stored to db")
+}
+
+func (suite *MockedClientTestSuite) TestFetchAndPersist_update() {
+	engine := New(suite.engineCfg, NewEnergyService(suite.dao, suite.initMockSeSameDayUpdateClient()), nil)
+	err := engine.FetchAndPersist(
+		context.Background(),
+		time.Date(2024, 3, 01, 0, 0, 0, 0, time.UTC),
+		time.Date(2024, 3, 01, 0, 0, 0, 0, time.UTC),
+	)
+	suite.Require().NoError(err)
+
+	// "later" response with an update and more entries
+	suite.Require().NoError(engine.FetchAndPersist(
+		context.Background(),
+		time.Date(2024, 3, 01, 0, 0, 0, 0, time.UTC),
+		time.Date(2024, 3, 01, 0, 0, 0, 0, time.UTC),
+	))
+
+	energies, err := suite.dao.ReadEnergy(suite.time("2024-03-01T11:00:00"), suite.time("2024-03-01T12:01:00"))
+	suite.Require().NoError(err)
+	suite.Require().Equal(5, len(energies))
+	suite.Assert().Equal(3344, energies[0].Value, "expected value to be updated")
+	suite.Assert().Equal(3328, energies[1].Value, "expected new entry to be stored")
+	suite.Assert().Equal(3559, energies[2].Value, "expected new entry to be stored")
+	suite.Assert().Equal(3513, energies[3].Value, "expected new entry to be stored")
+	suite.Assert().Equal(2233, energies[4].Value, "expected new entry to be stored")
 }
 
 func (suite *MockedClientTestSuite) time(s string) time.Time {
@@ -106,7 +124,7 @@ func (suite *MockedClientTestSuite) time(s string) time.Time {
 	return dt.In(loc)
 }
 
-func (suite *MockedClientTestSuite) initMockSeClient() seclient.SEClient {
+func (suite *MockedClientTestSuite) initMockSeSeparateDaysClient() seclient.SEClient {
 	feb29thRespBody := suite.readJsonStringFile("./seclient/example_response_feb_29th.json")
 	march1stRespBody := suite.readJsonStringFile("./seclient/example_response_march_1st.json")
 
@@ -119,7 +137,6 @@ func (suite *MockedClientTestSuite) initMockSeClient() seclient.SEClient {
 			startDate: request.URL.Query().Get("startDate"),
 			endDate:   request.URL.Query().Get("endDate"),
 		}
-		suite.apiCalls = append(suite.apiCalls, params)
 		if params.startDate == "2024-02-29" && params.endDate == "2024-02-29" {
 			body = feb29thRespBody
 		} else if params.startDate == "2024-03-01" && params.endDate == "2024-03-01" {
@@ -133,6 +150,32 @@ func (suite *MockedClientTestSuite) initMockSeClient() seclient.SEClient {
 		resp.Header.Set("Content-Type", "application/json; charset=utf-8")
 		return resp, nil
 	})
+
+	return seclient.NewSEClient(client, "someApiKey", "someSiteId")
+}
+
+func (suite *MockedClientTestSuite) initMockSeSameDayUpdateClient() seclient.SEClient {
+	earlyRespBody := suite.readJsonStringFile("./seclient/example_response_march_early.json")
+	lateRespBody := suite.readJsonStringFile("./seclient/example_response_march_late.json")
+
+	client := req.C()
+	httpmock.ActivateNonDefault(client.GetClient())
+
+	responses := []*http.Response{
+		httpmock.NewStringResponse(http.StatusOK, earlyRespBody),
+		httpmock.NewStringResponse(http.StatusOK, lateRespBody),
+	}
+
+	for _, resp := range responses {
+		resp.Header.Set("Content-Type", "application/json; charset=utf-8")
+	}
+
+	httpmock.ResponderFromMultipleResponses(responses)
+	httpmock.RegisterResponder(
+		"GET",
+		"https://monitoringapi.solaredge.com/site/someSiteId/energy",
+		httpmock.ResponderFromMultipleResponses(responses),
+	)
 
 	return seclient.NewSEClient(client, "someApiKey", "someSiteId")
 }
