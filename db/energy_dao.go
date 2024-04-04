@@ -89,9 +89,14 @@ func (e *energyDao) ReadEnergy(from time.Time, to time.Time) ([]general.Energy, 
 	}
 
 	var finalRes []general.Energy
+	loc, err := time.LoadLocation("Asia/Jerusalem")
+	if err != nil {
+		return nil, err
+	}
+
 	for _, entry := range res {
 		finalRes = append(finalRes, general.Energy{
-			DateTime: entry.DateTime.In(time.UTC),
+			DateTime: entry.DateTime.In(loc),
 			Value:    entry.Value,
 		})
 	}

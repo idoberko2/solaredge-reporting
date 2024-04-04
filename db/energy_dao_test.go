@@ -37,19 +37,19 @@ func (suite *EnergyDaoSuite) SetupTest() {
 }
 
 func (suite *EnergyDaoSuite) TestReadWrite() {
-	empty, err := suite.dao.ReadEnergy(suite.time("2024-03-01T12:00:00Z"), suite.time("2024-03-01T13:00:00Z"))
+	empty, err := suite.dao.ReadEnergy(suite.time("2024-03-01T10:00:00"), suite.time("2024-03-01T11:00:00"))
 	suite.Require().NoError(err)
 	suite.Assert().True(len(empty) == 0)
 
 	expected := []general.Energy{{
-		DateTime: suite.time("2024-03-01T12:00:00Z"),
+		DateTime: suite.time("2024-03-01T10:00:00"),
 		Value:    1000,
 	}, {
-		DateTime: suite.time("2024-03-01T12:15:00Z"),
+		DateTime: suite.time("2024-03-01T10:15:00"),
 		Value:    1100,
 	}}
 	suite.Assert().NoError(suite.dao.WriteEnergy(expected))
-	actual, err := suite.dao.ReadEnergy(suite.time("2024-03-01T12:00:00Z"), suite.time("2024-03-01T13:00:00Z"))
+	actual, err := suite.dao.ReadEnergy(suite.time("2024-03-01T10:00:00"), suite.time("2024-03-01T11:00:00"))
 	suite.Require().NoError(err)
 
 	suite.Assert().Equal(expected, actual)
@@ -57,25 +57,28 @@ func (suite *EnergyDaoSuite) TestReadWrite() {
 
 func (suite *EnergyDaoSuite) TestUpdate() {
 	suite.Assert().NoError(suite.dao.WriteEnergy([]general.Energy{{
-		DateTime: suite.time("2024-03-01T12:00:00Z"),
+		DateTime: suite.time("2024-03-01T10:00:00"),
 		Value:    1000,
 	}}))
 
 	expected := general.Energy{
-		DateTime: suite.time("2024-03-01T12:00:00Z"),
+		DateTime: suite.time("2024-03-01T10:00:00"),
 		Value:    1100,
 	}
 	suite.Require().NoError(suite.dao.UpdateEnergy(expected))
 
-	actual, err := suite.dao.ReadEnergy(suite.time("2024-03-01T12:00:00Z"), suite.time("2024-03-01T13:00:00Z"))
+	actual, err := suite.dao.ReadEnergy(suite.time("2024-03-01T10:00:00"), suite.time("2024-03-01T11:00:00"))
 	suite.Require().NoError(err)
 
 	suite.Assert().Equal([]general.Energy{expected}, actual)
 }
 
 func (suite *EnergyDaoSuite) time(s string) time.Time {
-	dt, err := time.Parse(time.RFC3339, s)
+	dt, err := time.Parse(time.RFC3339, s+"+02:00")
 	suite.Require().NoError(err)
 
-	return dt
+	loc, err := time.LoadLocation("Asia/Jerusalem")
+	suite.Require().NoError(err)
+
+	return dt.In(loc)
 }
