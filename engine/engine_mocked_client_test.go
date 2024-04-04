@@ -60,35 +60,50 @@ func (suite *MockedClientTestSuite) SetupTest() {
 }
 
 func (suite *MockedClientTestSuite) TestFetchAndPersist_range() {
-	err := suite.engine.FetchAndPersist(context.Background(), suite.time("2024-02-29T00:00:00Z"),
-		suite.time("2024-03-01T00:00:00Z"))
+
+	err := suite.engine.FetchAndPersist(
+		context.Background(),
+		time.Date(2024, 2, 29, 0, 0, 0, 0, time.UTC),
+		time.Date(2024, 3, 01, 0, 0, 0, 0, time.UTC),
+	)
 	suite.Require().NoError(err)
 
-	energies, err := suite.dao.ReadEnergy(suite.time("2024-03-01T11:30:00Z"), suite.time("2024-03-01T11:31:00Z"))
+	febEnergies, err := suite.dao.ReadEnergy(suite.time("2024-02-29T14:00:00"), suite.time("2024-02-29T14:01:00"))
 	suite.Require().NoError(err)
-	suite.Assert().Equal(1, len(energies))
-	suite.Assert().Equal(3559, energies[0].Value)
+	suite.Require().Equal(1, len(febEnergies))
+	suite.Assert().Equal(3334, febEnergies[0].Value)
 
-	afterPeriodEnergies, err := suite.dao.ReadEnergy(suite.time("2024-03-15T00:00:00Z"), suite.time("2024-03-16T00:00:00Z"))
+	marchEnergies, err := suite.dao.ReadEnergy(suite.time("2024-03-01T11:30:00"), suite.time("2024-03-01T11:31:00"))
+	suite.Require().NoError(err)
+	suite.Require().Equal(1, len(marchEnergies))
+	suite.Assert().Equal(3559, marchEnergies[0].Value)
+
+	afterPeriodEnergies, err := suite.dao.ReadEnergy(suite.time("2024-03-15T00:00:00"), suite.time("2024-03-16T00:00:00"))
 	suite.Require().NoError(err)
 	suite.Assert().Len(afterPeriodEnergies, 0)
 }
 
 func (suite *MockedClientTestSuite) TestFetchAndPersist_zeros() {
-	err := suite.engine.FetchAndPersist(context.Background(), suite.time("2024-03-01T00:00:00Z"),
-		suite.time("2024-03-01T00:00:00Z"))
+	err := suite.engine.FetchAndPersist(
+		context.Background(),
+		time.Date(2024, 3, 01, 0, 0, 0, 0, time.UTC),
+		time.Date(2024, 3, 01, 0, 0, 0, 0, time.UTC),
+	)
 	suite.Require().NoError(err)
 
-	energies, err := suite.dao.ReadEnergy(suite.time("2024-03-01T23:00:00Z"), suite.time("2024-03-01T23:30:00Z"))
+	energies, err := suite.dao.ReadEnergy(suite.time("2024-03-01T23:00:00"), suite.time("2024-03-01T23:30:00"))
 	suite.Require().NoError(err)
 	suite.Assert().Equal(0, len(energies), "zeros should not be stored to db")
 }
 
 func (suite *MockedClientTestSuite) time(s string) time.Time {
-	dt, err := time.Parse(time.RFC3339, s)
+	dt, err := time.Parse(time.RFC3339, s+"+02:00")
 	suite.Require().NoError(err)
 
-	return dt
+	loc, err := time.LoadLocation("Asia/Jerusalem")
+	suite.Require().NoError(err)
+
+	return dt.In(loc)
 }
 
 func (suite *MockedClientTestSuite) initMockSeClient() seclient.SEClient {
