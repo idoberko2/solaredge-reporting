@@ -9,11 +9,19 @@ import (
 	"github.com/idoberko2/semonitor/engine"
 )
 
+const (
+	QueryParamFrom = "from"
+	QueryParamTo   = "to"
+)
+
 func New(e engine.Engine, hcDao db.HealthCheckDao, cfg ServerConfig) *http.Server {
 	r := mux.NewRouter()
 
 	apir := r.PathPrefix("/api").Subrouter()
-	apir.HandleFunc("/fetch_persist", GetFetchPersist(e)).Queries("from", "{from}", "to", "{to}").Methods(http.MethodGet)
+	apir.HandleFunc("/fetch_persist", GetFetchPersist(e)).Queries(
+		QueryParamFrom, fmt.Sprintf("{%s}", QueryParamFrom),
+		QueryParamTo, fmt.Sprintf("{%s}", QueryParamTo),
+	).Methods(http.MethodGet)
 	apir.HandleFunc("/is_healthy", IsHealthy(hcDao)).Methods(http.MethodGet)
 
 	srv := &http.Server{

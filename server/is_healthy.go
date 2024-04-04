@@ -11,14 +11,9 @@ func IsHealthy(hcDao db.HealthCheckDao) func(w http.ResponseWriter, r *http.Requ
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Debug("IsHealthy called")
 
-		jsonResponse, err := json.Marshal(IsHealthyResponse{
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(IsHealthyResponse{
 			IsHealthy: hcDao.IsHealthy(),
 		})
-		if err != nil {
-			log.Fatal("error marshalling json")
-		}
-
-		w.WriteHeader(http.StatusOK)
-		w.Write(jsonResponse)
 	}
 }
