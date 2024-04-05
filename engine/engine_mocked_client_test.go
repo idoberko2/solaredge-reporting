@@ -31,6 +31,10 @@ func TestEngineMockedClientSuite(t *testing.T) {
 func (suite *MockedClientTestSuite) SetupSuite() {
 	general.InitBasePath()
 	suite.Require().NoError(general.LoadDotEnv())
+	cfg, err := general.ReadConfigFromEnv()
+	suite.Require().NoError(err)
+	suite.cfg = cfg
+
 	mig := db.NewMigrator()
 	suite.Require().NoError(mig.Migrate(suite.cfg))
 
