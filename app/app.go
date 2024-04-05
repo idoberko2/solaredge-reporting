@@ -8,7 +8,6 @@ import (
 	"github.com/idoberko2/semonitor/seclient"
 	"github.com/idoberko2/semonitor/server"
 	"github.com/imroc/req/v3"
-	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
 	"net/http"
 	"os"
@@ -59,16 +58,8 @@ func (a *app) RunLastDays(ctx context.Context, rawDays string) error {
 }
 
 func (a *app) init() error {
-	appConfig, err := general.ReadAppConfig()
-	if err != nil {
-		log.WithError(err).Fatal("error reading app config")
-	}
-
-	if !appConfig.AvoidDotEnv {
-		err := godotenv.Load(".env")
-		if err != nil {
-			log.WithError(err).Fatal("Error loading .env file")
-		}
+	if err := general.LoadDotEnv(); err != nil {
+		log.WithError(err).Fatal("Error loading .env file")
 	}
 
 	dbCfg, err := db.ReadDbConfig()

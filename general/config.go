@@ -2,28 +2,16 @@ package general
 
 import (
 	"github.com/joho/godotenv"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/pkg/errors"
+	"io/fs"
 	"os"
 	"path"
 	"runtime"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const EnvAppPrefix = "sem"
-
-type AppConfig struct {
-	AvoidDotEnv bool `split_words:"true"`
-}
-
-func ReadAppConfig() (AppConfig, error) {
-	var cfg AppConfig
-
-	if err := envconfig.Process(EnvAppPrefix, &cfg); err != nil {
-		return cfg, errors.Wrap(err, "error processing app config")
-	}
-
-	return cfg, nil
-}
 
 func InitBasePath() {
 	_, filename, _, _ := runtime.Caller(0)
@@ -35,15 +23,12 @@ func InitBasePath() {
 }
 
 func LoadDotEnv() error {
-	appConfig, err := ReadAppConfig()
-	if err != nil {
-		return err
-	}
+	var pathErr *fs.PathError
 
-	if !appConfig.AvoidDotEnv {
-		if err := godotenv.Load(); err != nil {
-			return err
-		}
+	if err := godotenv.Load(".env"); errors.As(err, &pathErr) {
+		log.Info("couldn't find .env file, skipping .env file load")
+	} else if err != nil {
+		return err
 	}
 
 	return nil
