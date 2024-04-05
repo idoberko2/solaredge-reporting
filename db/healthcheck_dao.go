@@ -1,6 +1,7 @@
 package db
 
 import (
+	"github.com/idoberko2/semonitor/general"
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 	"time"
@@ -12,7 +13,7 @@ type HealthCheckDao interface {
 }
 
 type healthCheckDao struct {
-	config DbConfig
+	config general.Config
 	db     *sqlx.DB
 }
 
@@ -52,7 +53,7 @@ func (h *healthCheckDao) IsHealthy() bool {
 	return true
 }
 
-func NewHealthCheckDao(config DbConfig) HealthCheckDao {
+func NewHealthCheckDao(config general.Config) HealthCheckDao {
 	return &healthCheckDao{config: config}
 }
 

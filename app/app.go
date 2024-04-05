@@ -27,6 +27,7 @@ func New() App {
 }
 
 type app struct {
+	cfg          general.Config
 	engine       engine.Engine
 	hcDao        db.HealthCheckDao
 	srv          *http.Server
@@ -62,27 +63,24 @@ func (a *app) init() error {
 		log.WithError(err).Fatal("Error loading .env file")
 	}
 
-	dbCfg, err := db.ReadDbConfig()
+	cfg, err := general.ReadConfigFromEnv()
 	if err != nil {
 		return err
 	}
+	a.cfg = cfg
+
 	migrator := db.NewMigrator()
-	if err := migrator.Migrate(dbCfg); err != nil {
+	if err := migrator.Migrate(cfg); err != nil {
 		return err
 	}
 
-	eDao := db.NewEnergyDao(dbCfg)
+	eDao := db.NewEnergyDao(cfg)
 	if err := eDao.Init(); err != nil {
 		return err
 	}
-	a.hcDao = db.NewHealthCheckDao(dbCfg)
+	a.hcDao = db.NewHealthCheckDao(cfg)
 	if err := a.hcDao.Init(); err != nil {
 		return err
-	}
-
-	cfg, errCfg := engine.ReadConfig()
-	if errCfg != nil {
-		return errCfg
 	}
 
 	enSvc := engine.NewEnergyService(
@@ -98,16 +96,11 @@ func (a *app) init() error {
 }
 
 func (a *app) startServer(ctx context.Context) error {
-	cfg, errCfg := ReadServerConfig()
-	if errCfg != nil {
-		return errCfg
-	}
-
-	srv := server.New(a.engine, a.hcDao, cfg)
+	srv := server.New(a.engine, a.hcDao, a.cfg)
 	a.srv = srv
 
 	a.shutdownDone = make(chan bool, 1)
-	go a.waitForShutdown(ctx, cfg)
+	go a.waitForShutdown(ctx, a.cfg)
 
 	log.Info("starting server...")
 	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -120,7 +113,7 @@ func (a *app) startServer(ctx context.Context) error {
 	return nil
 }
 
-func (a *app) waitForShutdown(ctx context.Context, cfg server.ServerConfig) {
+func (a *app) waitForShutdown(ctx context.Context, cfg general.Config) {
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc,
 		syscall.SIGHUP,

@@ -1,12 +1,15 @@
 package db
 
-import "github.com/jmoiron/sqlx"
+import (
+	"github.com/idoberko2/semonitor/general"
+	"github.com/jmoiron/sqlx"
+)
 
 type Cleaner interface {
 	Cleanup() error
 }
 
-func NewCleaner(config DbConfig) Cleaner {
+func NewCleaner(config general.Config) Cleaner {
 	db, err := ConnectToDb(config)
 	if err != nil {
 		panic(err)

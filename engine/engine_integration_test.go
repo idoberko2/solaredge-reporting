@@ -29,29 +29,26 @@ func TestEngineSuite(t *testing.T) {
 func (suite *IntegrationTestSuite) SetupSuite() {
 	general.InitBasePath()
 	suite.Require().NoError(general.LoadDotEnv())
-	dbCfg, err := db.ReadDbConfig()
+	cfg, err := general.ReadConfigFromEnv()
 	suite.Require().NoError(err)
 	mig := db.NewMigrator()
-	suite.Require().NoError(mig.Migrate(dbCfg))
+	suite.Require().NoError(mig.Migrate(cfg))
 
-	eDao := db.NewEnergyDao(dbCfg)
+	eDao := db.NewEnergyDao(cfg)
 	suite.Require().NoError(eDao.Init())
 	suite.dao = eDao
-	suite.c = db.NewCleaner(dbCfg)
+	suite.c = db.NewCleaner(cfg)
 
-	engineCfg, err := ReadConfig()
-	suite.Require().NoError(err)
-
-	hcDao := db.NewHealthCheckDao(dbCfg)
+	hcDao := db.NewHealthCheckDao(cfg)
 	suite.Require().NoError(hcDao.Init())
 
 	client := req.C()
 	suite.svc = NewEnergyService(
 		eDao,
-		seclient.NewSEClient(client, engineCfg.SolarEdgeApiKey, engineCfg.SolarEdgeSiteId),
+		seclient.NewSEClient(client, cfg.SolarEdgeApiKey, cfg.SolarEdgeSiteId),
 	)
 
-	suite.engine = New(engineCfg, suite.svc)
+	suite.engine = New(cfg, suite.svc)
 }
 
 func (suite *IntegrationTestSuite) SetupTest() {

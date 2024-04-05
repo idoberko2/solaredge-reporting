@@ -18,10 +18,10 @@ import (
 
 type MockedClientTestSuite struct {
 	suite.Suite
-	srvPort   int
-	dao       db.EnergyDao
-	c         db.Cleaner
-	engineCfg Config
+	srvPort int
+	dao     db.EnergyDao
+	c       db.Cleaner
+	cfg     general.Config
 }
 
 func TestEngineMockedClientSuite(t *testing.T) {
@@ -31,19 +31,13 @@ func TestEngineMockedClientSuite(t *testing.T) {
 func (suite *MockedClientTestSuite) SetupSuite() {
 	general.InitBasePath()
 	suite.Require().NoError(general.LoadDotEnv())
-	dbCfg, err := db.ReadDbConfig()
-	suite.Require().NoError(err)
 	mig := db.NewMigrator()
-	suite.Require().NoError(mig.Migrate(dbCfg))
+	suite.Require().NoError(mig.Migrate(suite.cfg))
 
-	eDao := db.NewEnergyDao(dbCfg)
+	eDao := db.NewEnergyDao(suite.cfg)
 	suite.Require().NoError(eDao.Init())
 	suite.dao = eDao
-	suite.c = db.NewCleaner(dbCfg)
-
-	engineCfg, err := ReadConfig()
-	suite.Require().NoError(err)
-	suite.engineCfg = engineCfg
+	suite.c = db.NewCleaner(suite.cfg)
 }
 
 func (suite *MockedClientTestSuite) SetupTest() {
@@ -51,7 +45,7 @@ func (suite *MockedClientTestSuite) SetupTest() {
 }
 
 func (suite *MockedClientTestSuite) TestFetchAndPersist_range() {
-	engine := New(suite.engineCfg, NewEnergyService(suite.dao, suite.initMockSeSeparateDaysClient()))
+	engine := New(suite.cfg, NewEnergyService(suite.dao, suite.initMockSeSeparateDaysClient()))
 	err := engine.FetchAndPersist(
 		context.Background(),
 		time.Date(2024, 2, 29, 0, 0, 0, 0, time.UTC),
@@ -75,7 +69,7 @@ func (suite *MockedClientTestSuite) TestFetchAndPersist_range() {
 }
 
 func (suite *MockedClientTestSuite) TestFetchAndPersist_zeros() {
-	engine := New(suite.engineCfg, NewEnergyService(suite.dao, suite.initMockSeSeparateDaysClient()))
+	engine := New(suite.cfg, NewEnergyService(suite.dao, suite.initMockSeSeparateDaysClient()))
 	err := engine.FetchAndPersist(
 		context.Background(),
 		time.Date(2024, 3, 01, 0, 0, 0, 0, time.UTC),
@@ -89,7 +83,7 @@ func (suite *MockedClientTestSuite) TestFetchAndPersist_zeros() {
 }
 
 func (suite *MockedClientTestSuite) TestFetchAndPersist_update() {
-	engine := New(suite.engineCfg, NewEnergyService(suite.dao, suite.initMockSeSameDayUpdateClient()))
+	engine := New(suite.cfg, NewEnergyService(suite.dao, suite.initMockSeSameDayUpdateClient()))
 	err := engine.FetchAndPersist(
 		context.Background(),
 		time.Date(2024, 3, 01, 0, 0, 0, 0, time.UTC),

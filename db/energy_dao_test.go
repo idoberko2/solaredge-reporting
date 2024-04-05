@@ -20,7 +20,7 @@ func TestSuite(t *testing.T) {
 func (suite *EnergyDaoSuite) SetupSuite() {
 	general.InitBasePath()
 	suite.Require().NoError(general.LoadDotEnv())
-	cfg, err := ReadDbConfig()
+	cfg, err := general.ReadConfigFromEnv()
 	suite.Require().NoError(err)
 	mig := NewMigrator()
 	suite.Require().NoError(mig.Migrate(cfg))
