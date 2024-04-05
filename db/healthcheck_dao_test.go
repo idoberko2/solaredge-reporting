@@ -10,7 +10,7 @@ import (
 func TestHealthCheck(t *testing.T) {
 	general.InitBasePath()
 	require.NoError(t, general.LoadDotEnv())
-	cfg, err := ReadDbConfig()
+	cfg, err := general.ReadConfigFromEnv()
 	require.NoError(t, err)
 	mig := NewMigrator()
 	require.NoError(t, mig.Migrate(cfg))

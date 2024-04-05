@@ -3,6 +3,7 @@ package db
 import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/idoberko2/semonitor/general"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"strings"
@@ -11,7 +12,7 @@ import (
 )
 
 type Migrator interface {
-	Migrate(cfg DbConfig) error
+	Migrate(cfg general.Config) error
 }
 
 type migrator struct {
@@ -21,7 +22,7 @@ func NewMigrator() Migrator {
 	return &migrator{}
 }
 
-func (m *migrator) Migrate(cfg DbConfig) error {
+func (m *migrator) Migrate(cfg general.Config) error {
 	db, err := ConnectToDb(cfg)
 	if err != nil {
 		return err
@@ -48,7 +49,7 @@ func (m *migrator) Migrate(cfg DbConfig) error {
 	return nil
 }
 
-func getDbName(cfg DbConfig) string {
+func getDbName(cfg general.Config) string {
 	parts := strings.Split(cfg.DbConString, "/")
 	return parts[len(parts)-1]
 }

@@ -18,12 +18,12 @@ type EnergyDao interface {
 	ReadEnergy(from time.Time, to time.Time) ([]general.Energy, error)
 }
 
-func NewEnergyDao(config DbConfig) EnergyDao {
+func NewEnergyDao(config general.Config) EnergyDao {
 	return &energyDao{config: config}
 }
 
 type energyDao struct {
-	config DbConfig
+	config general.Config
 	db     *sqlx.DB
 }
 

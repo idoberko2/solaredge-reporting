@@ -44,6 +44,7 @@ jobs:
       run: |
         touch .env
         echo DATABASE_URL=postgres://user:password@localhost:5432/semonitor >> .env
+        echo PORT=3001 >> .env
         cat .env
 
     - name: Test

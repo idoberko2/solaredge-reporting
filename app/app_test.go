@@ -30,7 +30,6 @@ func TestIntegrationSuite(t *testing.T) {
 
 func (suite *IntegrationTestSuite) SetupSuite() {
 	general.InitBasePath()
-	suite.Require().NoError(general.LoadDotEnv())
 
 	suite.c = req.C().SetTimeout(200 * time.Millisecond)
 	suite.setupEnv()

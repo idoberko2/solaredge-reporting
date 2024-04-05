@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"github.com/idoberko2/semonitor/general"
 	log "github.com/sirupsen/logrus"
 	"strconv"
 	"time"
@@ -12,7 +13,7 @@ type Engine interface {
 	FetchAndPersistLastDays(ctx context.Context, rawDays string) error
 }
 
-func New(cfg Config, energySvc EnergyService) Engine {
+func New(cfg general.Config, energySvc EnergyService) Engine {
 	return &engine{
 		cfg:       cfg,
 		energySvc: energySvc,
@@ -20,7 +21,7 @@ func New(cfg Config, energySvc EnergyService) Engine {
 }
 
 type engine struct {
-	cfg       Config
+	cfg       general.Config
 	energySvc EnergyService
 	ready     bool
 }

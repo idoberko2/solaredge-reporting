@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/idoberko2/semonitor/db"
+	"github.com/idoberko2/semonitor/general"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -14,7 +15,7 @@ const (
 	QueryParamTo   = "to"
 )
 
-func New(e engine.Engine, hcDao db.HealthCheckDao, cfg ServerConfig) *http.Server {
+func New(e engine.Engine, hcDao db.HealthCheckDao, cfg general.Config) *http.Server {
 	r := mux.NewRouter()
 
 	apir := r.PathPrefix("/api").Subrouter()

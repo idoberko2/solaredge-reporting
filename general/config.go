@@ -4,22 +4,35 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/pkg/errors"
+	"io/fs"
 	"os"
 	"path"
 	"runtime"
+	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const EnvAppPrefix = "sem"
 
-type AppConfig struct {
-	AvoidDotEnv bool `split_words:"true"`
+type Config struct {
+	Host                  string        `default:"localhost"`
+	Port                  int           `envconfig:"PORT" required:"true"`
+	WriteTimeout          time.Duration `split_words:"true" default:"10s"`
+	ReadTimeout           time.Duration `split_words:"true" default:"10s"`
+	IdleTimeout           time.Duration `split_words:"true" default:"60s"`
+	ServerShutdownTimeout time.Duration `split_words:"true" default:"10s"`
+	DbConString           string        `envconfig:"DATABASE_URL"`
+	SolarEdgeApiKey       string        `split_words:"true"`
+	SolarEdgeSiteId       string        `split_words:"true"`
+	SolarEdgeStartDate    time.Time     `split_words:"true"`
 }
 
-func ReadAppConfig() (AppConfig, error) {
-	var cfg AppConfig
+func ReadConfigFromEnv() (Config, error) {
+	var cfg Config
 
 	if err := envconfig.Process(EnvAppPrefix, &cfg); err != nil {
-		return cfg, errors.Wrap(err, "error processing app config")
+		return cfg, err
 	}
 
 	return cfg, nil
@@ -35,15 +48,12 @@ func InitBasePath() {
 }
 
 func LoadDotEnv() error {
-	appConfig, err := ReadAppConfig()
-	if err != nil {
-		return err
-	}
+	var pathErr *fs.PathError
 
-	if !appConfig.AvoidDotEnv {
-		if err := godotenv.Load(); err != nil {
-			return err
-		}
+	if err := godotenv.Load(".env"); errors.As(err, &pathErr) {
+		log.Info("couldn't find .env file, skipping .env file load")
+	} else if err != nil {
+		return err
 	}
 
 	return nil

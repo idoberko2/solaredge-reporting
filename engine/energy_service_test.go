@@ -29,7 +29,7 @@ func (suite *EnergyServiceSuite) SetupSuite() {
 	log.SetLevel(log.DebugLevel)
 	general.InitBasePath()
 	suite.Require().NoError(general.LoadDotEnv())
-	cfg, err := db.ReadDbConfig()
+	cfg, err := general.ReadConfigFromEnv()
 	suite.Require().NoError(err)
 	mig := db.NewMigrator()
 	suite.Require().NoError(mig.Migrate(cfg))
